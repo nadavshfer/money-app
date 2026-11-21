@@ -1,6 +1,141 @@
 /* UI layer. Loaded after index.html's script: replaces the views, keeps all data logic. Standalone (phone-only storage). */
 (function(){var o=document.querySelector("head style");if(o&&o.id!=="lui")o.media="not all"})();
 
+const L_CSS=`
+:root{--radius:.875rem;--background:oklch(0.968 0.004 286);--foreground:oklch(0.2 0.015 280);--card:oklch(1 0 0);--popover:oklch(1 0 0);
+--primary:oklch(0.561 0.218 277);--primary-foreground:oklch(0.99 0.005 277);--primary-soft:oklch(0.561 0.218 277 / 0.1);
+--muted:oklch(0.948 0.006 280);--muted-foreground:oklch(0.54 0.015 280);
+--success:oklch(0.63 0.17 150);--success-soft:oklch(0.72 0.17 150 / 0.14);--warning:oklch(0.68 0.17 58);--warning-soft:oklch(0.77 0.17 65 / 0.16);
+--danger:oklch(0.6 0.22 27);--danger-soft:oklch(0.65 0.22 27 / 0.12);--track:oklch(0.92 0.008 280);--tabbar:oklch(1 0 0 / 0.82);
+--overlay:oklch(0.15 0.02 280 / 0.35);--border:oklch(0.91 0.006 280);--ringc:oklch(0.561 0.218 277 / 0.5);
+--elev-card:0 1px 2px oklch(0.2 0.03 280 / 0.04),0 10px 28px -12px oklch(0.25 0.06 280 / 0.14);
+--elev-fab:0 10px 24px -6px oklch(0.561 0.218 277 / 0.55),0 2px 6px oklch(0.561 0.218 277 / 0.3);
+--elev-sheet:0 -12px 40px -12px oklch(0.2 0.04 280 / 0.25);
+--gradient-hero:radial-gradient(120% 90% at 50% 0%,oklch(0.561 0.218 277 / 0.1),transparent 70%);color-scheme:light}
+:root.dark{--background:oklch(0.145 0.008 280);--foreground:oklch(0.96 0.004 280);--card:oklch(0.205 0.01 280);--popover:oklch(0.225 0.01 280);
+--primary:oklch(0.66 0.18 277);--primary-soft:oklch(0.66 0.18 277 / 0.18);--muted:oklch(0.26 0.01 280);--muted-foreground:oklch(0.68 0.012 280);
+--success:oklch(0.74 0.17 150);--success-soft:oklch(0.74 0.17 150 / 0.16);--warning:oklch(0.79 0.16 65);--warning-soft:oklch(0.79 0.16 65 / 0.16);
+--danger:oklch(0.7 0.19 25);--danger-soft:oklch(0.7 0.19 25 / 0.16);--track:oklch(0.3 0.01 280);--tabbar:oklch(0.21 0.01 280 / 0.82);
+--overlay:oklch(0 0 0 / 0.55);--border:oklch(1 0 0 / 0.08);--ringc:oklch(0.66 0.18 277 / 0.5);
+--elev-card:0 0 0 1px oklch(1 0 0 / 0.05);--elev-fab:0 10px 24px -6px oklch(0.66 0.18 277 / 0.5);--elev-sheet:0 -1px 0 oklch(1 0 0 / 0.08);
+--gradient-hero:radial-gradient(120% 90% at 50% 0%,oklch(0.66 0.18 277 / 0.16),transparent 70%);color-scheme:dark}
+*,::before,::after{box-sizing:border-box;margin:0;padding:0;border:0 solid var(--border)}
+html{line-height:1.5;-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{font-family:"Heebo",system-ui,-apple-system,sans-serif;font-size:16px;line-height:1.5;background:var(--background);color:var(--foreground);-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;padding:0}
+button,input,select,textarea{font:inherit;color:inherit;background:transparent;border-radius:0;letter-spacing:inherit}
+button{cursor:pointer;text-align:center}ul,ol{list-style:none}h1,h2,h3{font-size:inherit;font-weight:inherit}svg{display:block}
+.i{flex:none}.s16{width:16px;height:16px}.s17{width:17px;height:17px}.s18{width:18px;height:18px}.s22{width:22px;height:22px}.s24{width:24px;height:24px}.s28{width:28px;height:28px}
+.wrap{max-width:560px;margin:0 auto;min-height:100dvh;padding:env(safe-area-inset-top) 16px 144px}
+.stack>*+*{margin-top:16px}
+.surface{background:var(--card);color:var(--foreground);border-radius:24px;box-shadow:var(--elev-card)}
+.p5{padding:20px}
+.hero{background-image:var(--gradient-hero)}
+.hbox{display:flex;flex-direction:column;align-items:center;padding:28px 20px 24px}
+.hh{padding:24px 4px 0}.hh p{font-size:15px;color:var(--muted-foreground)}
+.hh h1,.shd h1{font-size:30px;font-weight:800;line-height:1.25;letter-spacing:-.025em}
+.shd{padding:24px 4px 4px}.shd p{margin-top:2px;font-size:15px;color:var(--muted-foreground)}
+.ch{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:16px}
+.ch h2{font-size:17px;font-weight:700;line-height:1.25}.aside{font-size:14px;color:var(--muted-foreground)}
+.tn{font-variant-numeric:tabular-nums}
+.ring{position:relative;display:grid;place-items:center}.ring svg{transform:rotate(-90deg)}
+.trk{stroke:var(--track)}.rg{stroke:currentColor;transition:stroke-dashoffset .9s cubic-bezier(.22,1,.36,1),stroke .3s}
+.rin{position:absolute;inset:0;display:grid;place-items:center;text-align:center}
+.hl{font-size:14px;font-weight:500;color:var(--muted-foreground)}
+.hn{display:block;margin-top:4px;font-size:52px;font-weight:800;line-height:1;letter-spacing:-.025em}
+.cur{font-size:.5em;font-weight:600}
+.t-success{color:var(--success)}.t-warning{color:var(--warning)}.t-danger{color:var(--danger)}.t-primary{color:var(--primary)}
+.pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:4px 12px;font-size:14px;line-height:20px;font-weight:600}
+.pill.t-success{background:var(--success-soft)}.pill.t-warning{background:var(--warning-soft)}.pill.t-danger{background:var(--danger-soft)}.pill.t-primary{background:var(--primary-soft)}
+.pill.h8{height:32px}.mt5{margin-top:20px}
+.hs{margin-top:12px;font-size:14px;color:var(--muted-foreground)}.hs b{font-weight:600;color:var(--foreground);font-variant-numeric:tabular-nums}
+.lst{margin:-4px 0}.lst>li+li{border-top:1px solid var(--border)}
+.r{display:flex;align-items:center;gap:12px;padding:10px 0}.grow{flex:1;min-width:0}
+.t1{font-size:15px;font-weight:600;line-height:1.5;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.t2{font-size:13px;color:var(--muted-foreground);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.amt{font-size:15px;font-weight:700;font-variant-numeric:tabular-nums}.amt.inc{color:var(--success)}
+.bdg{display:grid;place-items:center;width:40px;height:40px;flex:none;border-radius:22px;background:var(--primary-soft);color:var(--primary)}
+.bdg.inc{background:var(--success-soft);color:var(--success)}
+.trash{display:grid;place-items:center;width:36px;height:36px;margin-inline-end:-6px;border-radius:999px;color:var(--muted-foreground);transition:transform .14s,background-color .16s,color .16s}
+.trash:hover{background:var(--muted);color:var(--danger)}.trash:active{transform:scale(.96)}
+.empty{padding:24px 0;text-align:center;font-size:15px;color:var(--muted-foreground)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font-weight:600;user-select:none;transition:transform .14s cubic-bezier(.2,.8,.2,1),background-color .16s,color .16s,opacity .16s}
+.btn:active{transform:scale(.96)}.btn:disabled{pointer-events:none;opacity:.4}.btn:focus-visible{outline:none;box-shadow:0 0 0 4px var(--ringc)}
+.b-primary{background:var(--primary);color:var(--primary-foreground)}.b-soft{background:var(--primary-soft);color:var(--primary)}
+.b-muted{background:var(--muted);color:var(--foreground)}.b-ghost{color:var(--muted-foreground)}.b-ghost:hover{background:var(--muted)}.b-danger{background:var(--danger-soft);color:var(--danger)}
+.s-lg{height:56px;border-radius:22px;padding:0 20px;font-size:17px}.s-md{height:44px;border-radius:18px;padding:0 16px;font-size:15px}
+.s-sm{height:32px;border-radius:999px;padding:0 14px;font-size:14px}.s-ic{width:36px;height:36px;border-radius:999px}
+.w100{width:100%}.mt3{margin-top:12px}.mt2{margin-top:8px}.mt4{margin-top:16px}
+.bar{height:10px;width:100%;overflow:hidden;border-radius:999px;background:var(--track)}.bar.thin{height:6px;margin-top:6px}
+.fill{height:100%;border-radius:999px;transition:width .7s cubic-bezier(.22,1,.36,1),background-color .3s}
+.f-success{background:var(--success)}.f-warning{background:var(--warning)}.f-danger{background:var(--danger)}.f-primary{background:var(--primary)}
+.nav3{display:flex;align-items:center;justify-content:space-between;padding:8px}
+.mb{display:grid;place-items:center;width:44px;height:44px;border-radius:999px;color:var(--primary);transition:transform .14s,opacity .16s}
+.mb:active{transform:scale(.96)}.mb:disabled{opacity:.3;pointer-events:none}
+.mc{text-align:center}.mc p:first-child{font-size:17px;font-weight:700}.mc p+p{font-size:12px;color:var(--muted-foreground)}
+.g3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{padding:16px 12px;text-align:center}.stat p:first-child{font-size:13px;font-weight:500;color:var(--muted-foreground)}
+.stat p+p{margin-top:4px;font-size:19px;font-weight:800;letter-spacing:-.025em;font-variant-numeric:tabular-nums}
+.pots>*+*{margin-top:20px}.pot .pt{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:8px}
+.pot .pt span:first-child{font-size:15px;font-weight:600}.pot .pt span+span{font-size:13px;color:var(--muted-foreground);font-variant-numeric:tabular-nums}
+.pot .pn{margin-top:6px;font-size:13px;color:var(--muted-foreground)}.pot .pn.t-danger{color:var(--danger)}.pot .pn.t-warning{color:var(--warning)}
+.top3>li{display:flex;align-items:center;gap:12px}.top3>li+li{margin-top:14px}
+.top3 .tr{display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+.em p{margin-bottom:12px;font-size:15px}.em p b{font-variant-numeric:tabular-nums}.em p span{color:var(--muted-foreground)}
+.grp>*+*{margin-top:16px}.grp h3{margin-bottom:4px;font-size:13px;font-weight:600;color:var(--muted-foreground)}
+.tips>li{display:flex;gap:12px;font-size:15px;line-height:1.625}.tips>li+li{margin-top:12px}
+.tips .d{margin-top:8px;width:8px;height:8px;flex:none;border-radius:999px;background:var(--primary)}
+.qamw{display:flex;align-items:baseline;justify-content:center;gap:6px;padding:8px 0}
+.qamt{min-width:2ch;max-width:100%;text-align:center;font-size:56px;font-weight:800;line-height:1;letter-spacing:-.025em;font-variant-numeric:tabular-nums;border:0;outline:0}
+.qamt::placeholder{color:var(--track)}.qcur{font-size:28px;font-weight:700;color:var(--muted-foreground)}
+.inp{height:48px;width:100%;border-radius:18px;background:var(--muted);padding:0 16px;font-size:16px;color:var(--foreground);outline:0}
+.inp::placeholder{color:var(--muted-foreground)}.inp:focus{box-shadow:0 0 0 4px var(--ringc)}
+.ctr{text-align:center;margin-top:8px}
+.chips{display:flex;gap:8px;overflow-x:auto;margin:16px -20px 0;padding:0 20px 4px;scrollbar-width:none}.chips::-webkit-scrollbar{display:none}
+.chip{display:flex;height:40px;flex:none;align-items:center;gap:6px;border-radius:999px;padding:0 14px;font-size:14px;font-weight:600;background:var(--muted);color:var(--foreground);transition:transform .14s,background-color .16s,color .16s}
+.chip:active{transform:scale(.96)}.chip.on{background:var(--primary);color:var(--primary-foreground)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.mt4{margin-top:16px}
+.chk{margin-top:16px;border-radius:22px;background:var(--muted);padding:16px}.chk p{margin-top:10px;font-size:15px;line-height:1.625}.chk b{font-variant-numeric:tabular-nums}
+.chkb{margin-top:12px;display:flex;gap:8px}
+@keyframes reveal{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}.reveal{animation:reveal .26s cubic-bezier(.22,1,.36,1)}
+.tbn{position:fixed;inset-inline:0;bottom:0;z-index:40}.tbi{max-width:560px;margin:0 auto;padding:0 12px max(env(safe-area-inset-bottom),10px)}
+.tbg{display:grid;grid-template-columns:repeat(5,1fr);align-items:center;height:68px;border-radius:26px;border:1px solid var(--border);background:var(--tabbar);box-shadow:var(--elev-card);-webkit-backdrop-filter:blur(24px);backdrop-filter:blur(24px)}
+.tab{height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;font-size:11px;font-weight:600;color:var(--muted-foreground);transition:transform .14s,color .16s}
+.tab:active{transform:scale(.96)}.tab.on{color:var(--primary)}
+.fabw{display:flex;justify-content:center}
+.fab{margin-top:-36px;display:grid;place-items:center;width:62px;height:62px;border-radius:999px;background:var(--primary);color:var(--primary-foreground);box-shadow:0 0 0 5px var(--background),var(--elev-fab);transition:transform .14s}
+.fab:active{transform:scale(.96)}
+.ov{position:fixed;inset:0;z-index:50;background:var(--overlay);animation:fin .2s ease-out}
+.sht{position:fixed;inset-inline:0;bottom:0;z-index:51;margin:0 auto;display:flex;max-height:92dvh;max-width:560px;flex-direction:column;border-radius:28px 28px 0 0;background:var(--card);box-shadow:var(--elev-sheet);animation:sup .34s cubic-bezier(.22,1,.36,1)}
+.grab{margin:10px auto 0;height:6px;width:40px;border-radius:999px;background:var(--track)}
+.shb{overflow-y:auto;padding:12px 20px max(env(safe-area-inset-bottom),20px)}.stt{text-align:center;font-size:17px;font-weight:700}
+@keyframes fin{from{opacity:0}to{opacity:1}}@keyframes sup{from{transform:translateY(100%)}to{transform:none}}
+.seg{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:4px;border-radius:22px;background:var(--muted);padding:4px}
+.sg{border-radius:18px;padding:10px 8px;text-align:center;color:var(--muted-foreground);transition:transform .14s,background-color .16s,color .16s}
+.sg:active{transform:scale(.96)}.sg.on{background:var(--card);color:var(--foreground);box-shadow:var(--elev-card)}.sgl{display:block;font-size:15px;font-weight:600;font-variant-numeric:tabular-nums}
+.csl{font-size:13px;color:var(--primary);background:transparent;padding:0;max-width:150px;font-weight:500;appearance:none;-webkit-appearance:none}
+.note{margin-top:12px;font-size:13px;color:var(--muted-foreground)}.note.s{margin-top:8px}
+.nf{position:relative}.nf .inp{padding-inline-end:40px;font-variant-numeric:tabular-nums}.nfc{position:absolute;inset-block:0;inset-inline-end:16px;display:grid;place-items:center;color:var(--muted-foreground);pointer-events:none}
+.selw{position:relative;min-width:0;flex:1.4}.selw select{appearance:none;-webkit-appearance:none;padding-inline-end:36px;font-weight:500}.selc{position:absolute;inset-inline-end:12px;top:50%;transform:translateY(-50%);color:var(--muted-foreground);pointer-events:none}
+.brow{display:flex;align-items:center;gap:8px}.brow+.brow{margin-top:10px}.brow .nf{flex:1;min-width:0}
+.fl{display:block;margin-bottom:6px;font-size:14px;font-weight:500;color:var(--muted-foreground)}
+textarea.inp{height:auto;min-height:96px;padding:12px 16px;font-size:12px;direction:ltr;text-align:left}
+.sal-l{display:block;text-align:center;font-size:14px;font-weight:500;color:var(--muted-foreground)}
+.qamt.sal{font-size:52px}.splitbar{display:flex;height:12px;overflow:hidden;border-radius:999px;margin-top:12px}.splitbar div{height:100%;transition:width .7s cubic-bezier(.22,1,.36,1)}
+.bg-primary{background:var(--primary)}.bg-warning{background:var(--warning)}.bg-success{background:var(--success)}
+.sdot{width:12px;height:12px;flex:none;border-radius:999px}.sl{font-size:15px;font-weight:600}.sl span{font-weight:400;color:var(--muted-foreground)}
+.sv{font-size:17px;font-weight:700;font-variant-numeric:tabular-nums}
+.sr{display:flex;align-items:center;gap:12px;padding:12px 0}.sr+.sr{border-top:1px solid var(--border)}
+.tgl{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:8px;border-radius:22px;background:var(--muted);padding:12px 16px}
+.sw{position:relative;display:inline-flex;height:31px;width:51px;flex:none;align-items:center;border-radius:999px;padding:2px;background:var(--track);transition:background-color .2s}
+.sw.on{background:var(--success)}.sw i{display:block;width:27px;height:27px;border-radius:999px;background:var(--card);box-shadow:var(--elev-card);transition:transform .25s cubic-bezier(.22,1,.36,1)}.sw.on i{transform:translateX(-20px)}
+#toasts{position:fixed;top:calc(12px + env(safe-area-inset-top));left:0;right:0;z-index:100;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none}
+.toast{pointer-events:auto;width:min(356px,calc(100vw - 24px));display:flex;align-items:center;gap:10px;padding:16px;border-radius:18px;background:var(--popover);color:var(--foreground);border:1px solid var(--border);box-shadow:0 4px 12px rgba(0,0,0,.1);font-size:13px;animation:tin .3s cubic-bezier(.22,1,.36,1)}
+.toast .tt{font-weight:500}.toast .td{margin-top:2px;color:var(--muted-foreground)}.toast .ti{color:var(--success)}
+.bn{display:block;margin-top:4px;font-size:40px;font-weight:800;line-height:1.1;letter-spacing:-.025em;font-variant-numeric:tabular-nums}.bn.neg{color:var(--danger)}.bn .cur{font-size:.5em;font-weight:600;color:var(--muted-foreground)}
+@keyframes tin{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){*,::before,::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+`;
+(function(){var s=document.createElement("style");s.id="lui";s.textContent=L_CSS;document.head.appendChild(s)})();
 
 /* ---------- icons (lucide) ---------- */
 const LI=(p,c="",sw=2)=>`<svg class="i ${c}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${p}</svg>`;
@@ -56,22 +191,21 @@ let BAL={raw:""};
 function Lbal(){const b=S.settings.bal;if(!b)return null;let v=b.amt;const seen=b.seen||[];S.tx.forEach(t=>{if(t.date>b.date||(t.date===b.date&&!seen.includes(t.id)))v+=t.type==="inc"?t.amt:-t.amt});return v}
 /* ---------- Riseup snapshot (encrypted file synced daily) ---------- */
 let SNAP={d:null,st:"none",msg:""},SP={raw:""};
-const Lneg=n=>`<bdi dir="ltr">−${Lfmt(n)}</bdi> ₪`;
-const Lsn=n=>n<0?Lneg(n):Lils(n);
+const Lsn=n=>(n<0?"−":"")+Lils(n);
 const b64d=x=>Uint8Array.from(atob(x),c=>c.charCodeAt(0));
 async function snapDecrypt(f,pass){const km=await crypto.subtle.importKey("raw",new TextEncoder().encode(pass),"PBKDF2",false,["deriveKey"]);const k=await crypto.subtle.deriveKey({name:"PBKDF2",salt:b64d(f.salt),iterations:f.iter,hash:"SHA-256"},km,{name:"AES-GCM",length:256},false,["decrypt"]);return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:"AES-GCM",iv:b64d(f.iv)},k,b64d(f.ct))))}
 async function loadSnap(){
  let pass="",cached=null;try{pass=localStorage.getItem("snapPass")||"";cached=JSON.parse(localStorage.getItem("snapData")||"null")}catch(e){}
- if(cached){SNAP.d=cached;SNAP.st="ok";histRecord()}
+ if(cached){SNAP.d=cached;SNAP.st="ok"}
  try{
-  const r=await fetch("data/snapshot.enc.json",{cache:"no-store"});SNAP.offline=false;
+  const r=await fetch("data/snapshot.enc.json",{cache:"no-store"});
   if(r.status===404){if(!cached)SNAP.st="none"}
   else if(!r.ok)throw new Error("http")
   else if(!pass){if(!cached)SNAP.st="locked"}
-  else{try{SNAP.d=await snapDecrypt(await r.json(),pass);SNAP.st="ok";SNAP.msg="";histRecord();try{localStorage.setItem("snapData",JSON.stringify(SNAP.d))}catch(e){}}
+  else{try{SNAP.d=await snapDecrypt(await r.json(),pass);SNAP.st="ok";SNAP.msg="";try{localStorage.setItem("snapData",JSON.stringify(SNAP.d))}catch(e){}}
    catch(e){try{localStorage.removeItem("snapPass")}catch(_){}SNAP.msg="הסיסמה לא נכונה";if(!cached)SNAP.st="locked"}}
- }catch(e){SNAP.offline=true}
- if((tab==="home"||tab==="sum")&&!QA.open&&document.activeElement.tagName!=="INPUT")render();
+ }catch(e){}
+ if(tab==="home"&&!QA.open&&document.activeElement.tagName!=="INPUT")render();
 }
 function snapCalc(){
  const d=SNAP.d,sum=(a,f)=>(a||[]).reduce((x,y)=>x+(f(y)||0),0);
@@ -87,90 +221,22 @@ function snapCalc(){
   sav:sum(d.savings,x=>x.balance),inv:sum(d.investments,x=>x.value),partial:d.status!=="ok",errs:d.errors||[]};
 }
 const LdateFmt=iso=>{const x=new Date(iso);return isNaN(x)?"":x.toLocaleString("he-IL",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"})};
-/* ---------- freshness: how old is what we are showing ---------- */
-const HRS=36e5;
-const ageH=iso=>{const t=new Date(iso).getTime();return isNaN(t)?Infinity:Math.max(0,(Date.now()-t)/HRS)};
-function relAge(h){
- if(!isFinite(h))return"לא ידוע";
- if(h<1){const m=Math.max(1,Math.round(h*60));return m===1?"לפני דקה":"לפני "+m+" דקות"}
- if(h<24){const n=Math.round(h);return n===1?"לפני שעה":n===2?"לפני שעתיים":"לפני "+n+" שעות"}
- const d=Math.floor(h/24);return d===1?"אתמול":d===2?"לפני יומיים":"לפני "+d+" ימים";
-}
-const FRL={ok:"מעודכן",warn:"אולי לא מעודכן",bad:"לא מעודכן"};
-function freshState(){
- const d=SNAP.d,h=ageH(d.generatedAt);
- let lvl=h<=27?"ok":h<=51?"warn":"bad";
- if(lvl==="ok"&&d.status==="partial")lvl="warn";
- return{lvl,h,rel:relAge(h),at:LdateFmt(d.generatedAt),partial:d.status==="partial",errs:d.errors||[],offline:!!SNAP.offline};
-}
-function freshBanner(f){
- if(f.lvl==="ok"&&!f.offline)return"";
- let title,body;
- if(f.h>51){title="הנתונים לא מעודכנים";body=`הסנכרון האחרון מרייזאפ היה ב-${f.at} (${f.rel}). הסכומים כאן לא משקפים את הבנק עכשיו.`}
- else if(f.h>27){title="ייתכן שהנתונים לא מעודכנים";body=`הסנכרון האחרון היה ב-${f.at} (${f.rel}). אם הסנכרון של הערב לא רץ, הסכומים עשויים להיות ישנים.`}
- else if(f.partial){title="חלק מהנתונים לא נקראו";body=esc(f.errs.join("; "))||"הסנכרון האחרון הסתיים חלקית."}
- else{title="אין חיבור כרגע";body=`מוצגים הנתונים השמורים בטלפון, מ-${f.at}.`}
- return`<div class="warnb${f.lvl==="bad"?" bad":""}" role="status"><b>${title}</b>${body}</div>`;
-}
-const ymdLocal=iso=>{const x=new Date(iso);return x.getFullYear()+"-"+String(x.getMonth()+1).padStart(2,"0")+"-"+String(x.getDate()).padStart(2,"0")};
-function histRecord(){
- try{
-  const d=SNAP.d;if(!d)return;const c=snapCalc();let h=JSON.parse(localStorage.getItem("snapHist")||"[]");
-  if(h.some(x=>x.g===d.generatedAt))return;
-  h.push({g:d.generatedAt,d:ymdLocal(d.generatedAt),bal:Math.round(c.bal),free:Math.round(c.free)});
-  h.sort((a,b)=>a.g<b.g?-1:1);localStorage.setItem("snapHist",JSON.stringify(h.slice(-120)));
- }catch(e){}
-}
-function histInfo(c){
- try{
-  const h=JSON.parse(localStorage.getItem("snapHist")||"[]"),k=mk(todayStr()),m=h.filter(x=>x.d.slice(0,7)===k);
-  if(m.length<2)return{delta:null,since:null};
-  return{delta:c.bal-m[0].bal,since:m[0].d};
- }catch(e){return{delta:null,since:null}}
-}
-const Lmon=new Intl.DateTimeFormat("he-IL",{month:"short"});
-const dmOf=iso=>({d:iso.slice(8),m:Lmon.format(new Date(+iso.slice(0,4),+iso.slice(5,7)-1,1))});
-function moneyParts(c){
- const em=S.goals.find(g=>g.kind==="em"),gem=S.settings.gemel==null?175000:S.settings.gemel,emS=em?em.saved:0;
- return{em,gem,emS,total:c.bal+c.sav+c.inv+emS+gem};
-}
-const Nsec=(title,aside,body,cls="")=>`<section class="sec ${cls}">${title||aside?`<header class="sh"><h2>${title||""}</h2>${aside?`<span class="aside">${aside}</span>`:""}</header>`:""}${body}</section>`;
-
-function heroHtml(c,f){
- const stale=f.lvl!=="ok",v=Math.round(c.perDay),s=Lfmt(v),cls=s.length<=3?"":s.length<=5?"m":"s";
- const now=new Date(),nd=new Date(now.getFullYear(),now.getMonth()+1,0).getDate(),t=now.getDate();
- let ticks="";for(let i=1;i<=nd;i++)ticks+=`<i class="tk${i<t?" past":i===t?" now":""}" style="--i:${i}"></i>`;
- return`<section class="hero${stale?" stale":""}" aria-label="כמה אפשר להוציא היום"><p class="hero-k">${c.free<=0?"אין פנוי אחרי החיובים והחיסכון":"אפשר להוציא היום"}</p>
- <div class="hero-n"><span class="hero-v ${cls}" data-count="${v}">${s}</span><span class="hero-c">₪</span></div>
- <div class="ruler" role="img" aria-label="היום ${t} מתוך ${nd} ימי החודש">${ticks}</div>
- <div class="ruler-l"><span>1</span><span>עוד ${c.dl} ימים</span><span>${nd}</span></div>
- ${stale?`<p class="hero-w">לפי נתונים מ-${f.at}, לא מהבנק עכשיו</p>`:""}</section>`;
-}
 function snapCards(){
  if(SNAP.st==="ok"&&SNAP.d){
-  const c=snapCalc(),f=freshState(),M=moneyParts(c);
-  const sign=n=>n<0?Lneg(n):Lfmt(n)+" ₪";
-  const ledger=`<div class="ledger"><p><span>עו"ש</span><b>${sign(c.bal)}</b></p><p><span>חיובי אשראי וקבועות</span><b>${Lneg(c.billed+c.fixed)}</b></p>${c.rsv>0?`<p><span>חיסכון שנשאר להפריש</span><b>${Lneg(c.rsv)}</b></p>`:""}<p class="sum${c.free<0?" neg":""}"><span>פנוי עד סוף החודש</span><b>${sign(c.free)}</b></p></div>`;
-  const rows=c.up.map(u=>{const x=dmOf(u.d);return`<li class="r"><div class="dn tn">${+x.d}<small>${x.m}</small></div><div class="grow"></div><b class="big">${Lils(u.a)}</b></li>`}).join("")
-   +(c.extra>=1?`<li class="r"><div class="grow"><p class="t1">חיובי כרטיס שטרם פורטו</p></div><b class="big">${Lils(c.extra)}</b></li>`:"");
-  const up=Nsec("חיובים קרובים",c.up.length?"עד סוף החודש הבא":"",rows?`<ul class="lst">${rows}</ul>`:`<p class="calm">אין חיובים צפויים.</p>`,"in");
-  const segs=[{l:'עו"ש',n:"זמין",v:c.bal,col:"#8C9BFF"},{l:"פיקדונות וחיסכון",n:"בבנק",v:c.sav,col:"#FFC93C"},{l:"השקעות",n:"בבנק",v:c.inv,col:"#4FD6A8"},{l:"קרן חירום",n:"מהאפליקציה",v:M.emS,col:"#FF8A75"},{l:"גמל להשקעה",n:"לא זמין להוצאה",v:M.gem,col:"#ECECE6"}].filter(x=>x.v>0);
-  const sum=segs.reduce((a,x)=>a+x.v,0)||1;
-  const vault=`<section class="vault"><h2>איפה הכסף שלי</h2><p class="tot tn">${Lfmt(M.total)}<span>₪</span></p>
-   <div class="stack-bar" aria-hidden="true">${segs.map((x,i)=>`<i style="width:${(x.v/sum*100).toFixed(2)}%;background:${x.col};--k:${i}"></i>`).join("")}</div>
-   <ul class="lg">${segs.map(x=>`<li><span class="sw" style="background:${x.col}"></span><span class="n">${x.l}<small>${x.n}</small></span><b>${Lils(x.v)}</b></li>`).join("")}</ul>
-   <div class="mt4"><label class="fl">עדכון גמל (ידני)</label>${Lnf('data-gem="1"',M.gem,"גמל להשקעה")}</div></section>`;
-  const svc=Nsec("חיסכון החודש",`<span class="big">${Lils(c.savT)}</span>`,`<p class="note" style="margin:0 0 12px">הסכום שעוד לא הופקד מנוכה מ"אפשר להוציא היום".</p><label class="fl">הפקדתי החודש</label>${Lnf('data-sd="1"',c.done,"הפקדתי החודש")}`,"in");
-  const dot=l=>`<span class="fdot ${l}"></span>`;
-  const accs=(SNAP.d.accounts||[]).map(a=>{const h=ageH(a.lastUpdated),l=!isFinite(h)?"warn":h<=36?"ok":h<=72?"warn":"bad";
-   return`<li class="fr">${dot(l)}<div class="grow"><p class="t1">${esc(a.name)}</p><p class="t2">${a.lastUpdated?"נכון ל-"+LdateFmt(a.lastUpdated)+" · "+relAge(h):"אין תאריך עדכון"}</p></div></li>`}).join("");
-  const fresh=`<section class="sec" id="fresh"><header class="sh"><h2>מצב הנתונים</h2><span class="aside">${FRL[f.lvl]}</span></header><ul class="lst"><li class="fr">${dot(f.lvl)}<div class="grow"><p class="t1">סנכרון מרייזאפ</p><p class="t2">האחרון ${f.at} · ${f.rel}</p></div></li>${accs}</ul>${f.partial?`<p class="note">חלק מהנתונים לא נקראו: ${esc(f.errs.join("; "))}</p>`:""}<p class="note">הסנכרון רץ פעם ביום בערב. "מעודכן" אומר שהסנכרון האחרון היה בתוך כ-27 שעות.</p></section>`;
-  return ledger+up+vault+svc+fresh;
+  const c=snapCalc(),tone=c.age<26?"success":c.age<48?"warning":"danger",em=S.goals.find(g=>g.kind==="em"),gem=S.settings.gemel==null?175000:S.settings.gemel;
+  const total=c.bal+c.sav+c.inv+(em?em.saved:0)+gem;
+  const row=(l,v,n)=>`<li class="r"><div class="grow"><p class="t1">${l}</p>${n?`<p class="t2">${n}</p>`:""}</div><b class="tn">${Lsn(v)}</b></li>`;
+  const main=Lcard("העו\"ש שלי",Lpill(tone,"עודכן "+LdateFmt(SNAP.d.generatedAt)),`<span class="bn${c.bal<0?" neg":""}">${c.bal<0?"−":""}${Lfmt(c.bal)}<span class="cur"> ₪</span></span>
+   <ul class="lst mt3">${row("חיובי אשראי וחיובים צפויים",-c.billed,"כרטיסי אשראי, עד סוף החודש הבא")}${row("הוצאות קבועות שעוד יירדו החודש",-c.fixed)}${c.rsv>0?row("חיסכון שצריך להפריש החודש",-c.rsv,"יעד "+Lils(c.savT)+(c.done?" · הופקדו "+Lils(c.done):"")):""}${row("פנוי אחרי חיובים, קבועות וחיסכון",c.free)}</ul>
+   <p class="note s">בערך <b>${Lils(c.perDay)}</b> ליום עד סוף החודש (${c.dl} ימים). נתוני הבנק נכון ל-${LdateFmt(c.asOf)}.${c.partial?" חלק מהנתונים לא נקראו: "+esc(c.errs.join("; ")):""}</p>`);
+  const up=c.up.length?Lcard("חיובים קרובים","",`<ul class="lst">${c.up.map(u=>`<li class="r"><div class="grow"><p class="t1">${u.d.slice(8)}/${u.d.slice(5,7)}</p></div><b class="tn">${Lils(u.a)}</b></li>`).join("")}${c.extra>=1?`<li class="r"><div class="grow"><p class="t1">חיובי כרטיס שטרם פורטו</p></div><b class="tn">${Lils(c.extra)}</b></li>`:""}</ul>`):"";
+  const map=Lcard("איפה הכסף שלי",`<span class="tn">${Lils(total)}</span>`,`<ul class="lst">${row("עו\"ש",c.bal,"זמין")}${c.sav?row("פיקדונות וחיסכון",c.sav,"בבנק"):""}${c.inv?row("השקעות בבנק",c.inv):""}${em?row("קרן חירום",em.saved,"מהאפליקציה"):""}${row("גמל להשקעה",gem,"לא זמין להוצאה")}</ul><div class="mt3"><label class="fl">עדכון גמל (ידני)</label>${Lnf('data-gem="1"',gem,"גמל להשקעה")}</div>`);
+  const svc=Lcard("חיסכון החודש",`<span class="tn">${Lils(c.savT)}</span>`,`<p class="note" style="margin:0 0 8px">הסכום שעוד לא הופקד מנוכה מ"אפשר להוציא היום".</p><label class="fl">הפקדתי החודש</label>${Lnf('data-sd="1"',c.done,"הפקדתי החודש")}`);
+  return main+up+svc+map;
  }
- if(SNAP.st==="locked")return Nsec("סנכרון רייזאפ","",`<p class="note" style="margin:0 0 4px">יש נתונים מוצפנים מרייזאפ. הכנס את סיסמת הסנכרון פעם אחת במכשיר הזה.</p>${SNAP.msg?`<p class="note" style="color:var(--coral)">${esc(SNAP.msg)}</p>`:""}<div class="brow mt3"><input class="inp" type="password" data-sp="1" aria-label="סיסמת סנכרון" placeholder="סיסמת סנכרון" value="${esc(SP.raw)}">${Lbtn("primary","md",'data-act="snap-unlock"',"פתח")}</div>`);
- return Nsec("סנכרון רייזאפ","",`<p class="note" style="margin:0">${SNAP.st==="none"?"עדיין אין נתונים. הסנכרון הראשון ירוץ בערב.":"טוען נתונים מרייזאפ…"}</p>`);
+ if(SNAP.st==="locked")return Lcard("סנכרון רייזאפ","",`<p class="note" style="margin:0 0 4px">יש נתונים מוצפנים מרייזאפ. הכנס את סיסמת הסנכרון פעם אחת במכשיר הזה.</p>${SNAP.msg?`<p class="note s" style="color:var(--danger)">${esc(SNAP.msg)}</p>`:""}<div class="brow mt3"><input class="inp" type="password" data-sp="1" aria-label="סיסמת סנכרון" placeholder="סיסמת סנכרון" value="${esc(SP.raw)}">${Lbtn("soft","md",'data-act="snap-unlock"',"פתח")}</div>`)
+ return Lcard("סנכרון רייזאפ","",`<p class="note" style="margin:0">${SNAP.st==="none"?"עדיין אין נתונים. הסנכרון הראשון ירוץ בערב.":"טוען נתונים מרייזאפ…"}</p>`);
 }
-
 function balCard(){
  const b=S.settings.bal,v=Lbal(),d=b?b.date.slice(8)+"/"+b.date.slice(5,7):"";
  const head=b?`<p class="hl">יתרה משוערת</p><span class="bn${v<0?" neg":""}">${v<0?"−":""}${Lfmt(v)}<span class="cur"> ₪</span></span><p class="note s">מחושב מהתנועות שנרשמו מאז העדכון מה-${d}. מדי פעם עדכן לפי הבנק.</p>`:`<p class="note" style="margin:0 0 4px">הכנס את היתרה כפי שהיא בבנק עכשיו, והיא תתעדכן לבד עם כל הוצאה והכנסה שתרשום.</p>`;
@@ -237,54 +303,18 @@ const LrefreshQA=()=>document.querySelectorAll(".qaf").forEach(f=>{const a=f.que
 
 /* ---------- views ---------- */
 function vHome(){
- const live=SNAP.st==="ok"&&SNAP.d,SC=live?snapCalc():null,f=live?freshState():null;
+ const SC=(SNAP.st==="ok"&&SNAP.d)?snapCalc():null;
+ mon=mk(todayStr());const m=Lcalc(mon),T=Ltips(m),over=m.paceDiff;
+ const tone=m.left<=0?"danger":m.remToday<0&&over<=0?"warning":over<=0?"success":over>m.poolFull*.1?"danger":"warning";
+ const rv=m.allow>0?Lc01(m.remToday/m.allow):0;
  const dl=new Intl.DateTimeFormat("he-IL",{weekday:"long",day:"numeric",month:"long"}).format(new Date());
- const chip=f?`<button type="button" class="fchip ${f.lvl}" data-act="fresh"><i></i>${FRL[f.lvl]} · ${f.rel}</button>`:"";
- return`<header class="top"><p class="date">${dl}</p>${chip}</header>${f?freshBanner(f):""}${SC?heroHtml(SC,f):""}${snapCards()}`;
+ const rows=m.fi.rows,paid=rows.filter(f=>f.paid).length;
+ const recent=[...S.tx].reverse().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,6);
+ const bills=rows.length?`<ul class="lst">${rows.map(f=>`<li class="r">${Lbdg(f.cat)}<div class="grow"><p class="t1">${esc(f.cat)}</p><p class="t2 tn">${Lils(f.paid?f.act:f.amt)}</p></div>${f.paid?Lpill("success",LI(LP.check,"s16",3)+"שולם","h8"):Lbtn("soft","sm",`data-act="payfixed" data-v="${esc(f.cat)}"`,"שולם")}</li>`).join("")}</ul>`:`<p style="font-size:15px;color:var(--muted-foreground)">אין חשבונות קבועים. אפשר להוסיף בהגדרות.</p>`;
+ return`<div class="stack"><header class="hh"><p>${dl}</p><h1>שלום נדב</h1></header>
+ ${SC?`<section class="surface hero hbox">${Lring(SC.bal>0?SC.free/SC.bal:0,SC.free<=0?"danger":SC.age<48?"success":"warning",216,15,`<div><p class="hl">אפשר להוציא היום</p>${Lbig(SC.perDay,"hn")}</div>`)}${Lpill(SC.free<=0?"danger":SC.age<26?"success":SC.age<48?"warning":"danger",SC.free<=0?"אין פנוי אחרי החיובים והחיסכון":"אחרי חיובי אשראי, קבועות וחיסכון","mt5")}<p class="hs">פנוי <b>${Lils(SC.free)}</b> ל-${SC.dl} ימים עד סוף החודש</p><p class="hs" style="margin-top:4px">עו\"ש ${Lils(SC.bal)} פחות חיובים ${Lils(SC.billed+SC.fixed)} וחיסכון ${Lils(SC.rsv)}</p></section>`:""}
+ ${snapCards()}</div>`;
 }
-function vSum(){
- const live=SNAP.st==="ok"&&SNAP.d,mn=new Intl.DateTimeFormat("he-IL",{month:"long"}).format(new Date());
- if(!live)return`<header class="top"><p class="date">סיכום חודשי</p></header><div class="mh"><h1>${mn}</h1></div><p class="calm">הסיכום נבנה מנתוני רייזאפ. הוא יופיע אחרי הסנכרון הראשון.</p>`;
- const c=snapCalc(),f=freshState(),H=histInfo(c),M=moneyParts(c),td=todayStr(),day=new Date().getDate(),mkey=mk(td);
- const dn=S.settings.sumDone||{},isDone=id=>!!dn[mkey+":"+id],fd=iso=>iso.slice(8)+"/"+iso.slice(5,7);
- const happened=[],todo=[],missed=[];
- /* happened */
- let balS="ההשוואה לתחילת החודש מתחילה להיצבר מהיום";
- if(H.delta!==null&&Math.abs(H.delta)>=1)balS=`${H.delta<0?"ירד":"עלה"} ב-<b>${Lils(Math.abs(H.delta))}</b> מאז ${fd(H.since)}`;
- else if(H.delta!==null)balS=`לא השתנה מאז ${fd(H.since)}`;
- happened.push({id:"bal",t:`העו"ש עומד על <b>${Lsn(c.bal)}</b>`,s:balS});
- happened.push({id:"bill",t:`חיובי אשראי וחיובים צפויים: <b>${Lils(c.billed)}</b>`,s:`הוצאות קבועות שעוד יירדו החודש: ${Lils(c.fixed)}`});
- let big=null;((SNAP.d.futureNextMonthEnd||[]).forEach(x=>(x.txs||[]).forEach(t=>{if(!t.inc&&(!big||t.a>big.a)&&t.d>=td)big=t})));
- if(big)happened.push({id:"big",t:`החיוב הגדול הקרוב: ${esc(big.n||"חיוב")} <b>${Lils(big.a)}</b>`,s:`צפוי ב-${fd(big.d)}`});
- happened.push({id:"all",t:`הכסף שלי בסך הכול: <b>${Lils(M.total)}</b>`,s:M.em&&goalTarget(M.em)>0?`קרן החירום ב-${Math.round(M.emS/goalTarget(M.em)*100)}% מהיעד`:""});
- /* to do / missed */
- const due=S.settings.savDay||10;
- if(c.savT>0&&c.rsv>0){
-  if(day>due)missed.push({id:"save",t:`ההפקדה לחיסכון לא בוצעה: חסרים <b>${Lils(c.rsv)}</b>`,s:`מועד היעד היה ה-${due} לחודש. אחרי ההפקדה עדכן את "הפקדתי החודש" במסך הבית`});
-  else todo.push({id:"save",t:`להפריש <b>${Lils(c.rsv)}</b> לחיסכון`,s:`יעד חודשי ${Lils(c.savT)}${c.done?", כבר הופקדו "+Lils(c.done):""}. עד ה-${due} לחודש`});
- }else if(c.savT>0)happened.push({id:"saved",t:`הופקדו <b>${Lils(c.done)}</b> לחיסכון, היעד החודשי הושג`,s:""});
- const ups=c.up.filter(u=>u.d>=td);let run=0,short=null;
- for(const u of ups){run+=u.a;if(run>c.bal){short={d:u.d,run};break}}
- if(short)todo.push({id:"short",t:`החיובים עד ${fd(short.d)} (<b>${Lils(short.run)}</b>) גדולים מהעו"ש`,s:`צריך להעביר לפחות ${Lils(short.run-c.bal)} לפני כן`});
- else if(ups[0]){const dd=Math.round((new Date(ups[0].d)-new Date(td))/864e5);if(dd<=7)todo.push({id:"next"+ups[0].d,t:`חיוב של <b>${Lils(ups[0].a)}</b> ב-${fd(ups[0].d)}`,s:"לוודא שיש כיסוי בעו\"ש"})}
- if(c.free<0)todo.push({id:"nofree",t:`אין פנוי אחרי החיובים והחיסכון: חסרים <b>${Lils(-c.free)}</b>`,s:"כדאי לדחות הוצאות או להקטין את יעד החיסכון החודש"});
- const gAt=S.settings.gemelAt,gD=gAt?(Date.now()-new Date(gAt))/864e5:Infinity;
- if(!gAt)todo.push({id:"gem",t:"לעדכן את סכום הגמל",s:"עדיין אין תאריך עדכון. העדכון נעשה במסך הבית, בקטע איפה הכסף שלי"});
- else if(gD>30)todo.push({id:"gem",t:"לעדכן את סכום הגמל",s:`עודכן לפני ${Math.floor(gD)} ימים`});
- if(f.lvl!=="ok")missed.push({id:"sync",t:`הסנכרון מרייזאפ לא התעדכן: האחרון היה ב-${f.at}`,s:`${f.rel}. הסכומים באפליקציה עשויים להיות ישנים`});
- if(f.partial)missed.push({id:"part",t:"חלק מהנתונים לא נקראו בסנכרון האחרון",s:esc(f.errs.join("; "))});
- const open=todo.filter(x=>!isDone(x.id)).length,miss=missed.filter(x=>!isDone(x.id)).length;
- const one=(n,s,p)=>n===1?s:p;
- const head=`נשארו <b>${Lils(c.perDay)}</b> ליום עד סוף החודש. ${open?one(open,"דבר אחד לעשות",open+" דברים לעשות"):"אין משימות פתוחות"}${miss?", ו"+one(miss,"אחד שפוספס","-"+miss+" שפוספסו"):""}.`;
- const li=(x,k)=>{const d=isDone(x.id);return`<li class="it${d?" done":""}">${k==="h"?`<span class="mk i2">${LI(LP.check,"s16",3)}</span>`:`<button type="button" class="ck rp" data-act="sumdone" data-v="${esc(x.id)}" aria-pressed="${d}" aria-label="סימון כבוצע">${LI(LP.check,"s16",3)}</button>`}<div class="tx">${x.t}${x.s?`<small>${x.s}</small>`:""}</div></li>`};
- const blk=(t,n,list,k,cls,empty)=>`<section class="blk ${cls}"><header class="sh"><h2>${t}<small>${n}</small></h2></header>${list.length?`<ul>${list.map(x=>li(x,k)).join("")}</ul>`:`<p class="calm">${empty}</p>`}</section>`;
- return`<header class="top"><p class="date">סיכום חודשי</p><button type="button" class="fchip ${f.lvl}" data-act="fresh"><i></i>${FRL[f.lvl]} · ${f.rel}</button></header>
- ${freshBanner(f)}<div class="mh"><h1>${mn}</h1><p>${head}</p></div>
- ${blk("מה קרה",happened.length,happened,"h","","")}
- ${blk("מה לעשות",open?open+" פתוחים":"",todo,"t","in","אין כרגע שום דבר לעשות.")}
- ${blk("מה לא עשיתי",miss?miss+" פתוחים":"",missed,"m","","לא פוספס שום דבר החודש.")}`;
-}
-
 function vMonth(){
  const cur=mk(todayStr()),m=Lcalc(mon),d=m.d;
  const earliest=S.tx.reduce((a,t)=>mk(t.date)<a?mk(t.date):a,cur);
@@ -320,42 +350,31 @@ function vSalary(){
  ${Lcard("משכורות אחרונות","",LtxList(sals.slice(0,6),"עוד לא נרשמו משכורות"))}</div>`;
 }
 function vSet(){
- const s=S.settings,em=S.goals.find(g=>g.kind==="em"),th=s.theme||"system";
- const sec=(t,b)=>`<section class="set-sec"><header class="sh"><h2>${t}</h2></header>${b}</section>`;
- return`<header class="top"><p class="date">הכסף של נדב</p></header><div class="mh"><h1>הגדרות</h1></div>
- ${sec("חיסכון חודשי",`<label class="fl">יעד חיסכון חודשי</label>${Lnf('data-sav="1"',s.savT!=null?s.savT:Math.round(targets().sav),"יעד חיסכון חודשי")}<label class="fl mt3">יום בחודש להפקדה</label><div class="nf"><input class="inp" inputmode="numeric" aria-label="יום בחודש להפקדה" value="${s.savDay||10}" data-savday="1"></div><p class="note">הסכום שעוד לא הופקד מנוכה מ"אפשר להוציא היום". 0 מבטל את הניכוי. אחרי היום שנקבע, הפקדה חסרה מופיעה בסיכום תחת "מה לא עשיתי".</p>`)}
- ${sec("קרן חירום",`<div class="g2"><div><label class="fl">יעד</label>${Lnf('data-em="target"',em?Math.round(goalTarget(em)):0,"יעד")}</div><div><label class="fl">יש כרגע</label>${Lnf('data-em="saved"',em?em.saved:0,"יש כרגע")}</div></div>`)}
- ${sec("מראה",Lseg("מראה",th,[{v:"system",l:"אוטומטי"},{v:"light",l:"בהיר"},{v:"dark",l:"כהה"}],"theme"))}
- ${sec("גיבוי",`<p class="note" style="margin:0 0 12px">הנתונים נשמרים בטלפון בלבד. גבה מדי פעם: נפתח תפריט השיתוף ואפשר לשמור את הקובץ בדרייב.</p><div class="g2">${Lbtn("soft","md",'data-act="drive"',LI(LP.dl,"s16")+" גיבוי לקובץ")}${Lbtn("muted","md",'data-act="toggleio"',LI(LP.ul,"s16")+" ייצוא / ייבוא")}</div><p class="note" id="sync"></p>${backupMsg?`<p class="note">${esc(backupMsg)}</p>`:""}${SAL.io?`<div class="mt3"><input type="file" accept=".json,application/json" data-file="1" class="inp" style="padding-top:14px"><textarea id="json" class="inp mt2" placeholder="או הדבק JSON לשחזור"></textarea><div class="g2 mt2">${Lbtn("muted","md",'data-act="exp"',"הצג נתונים")}${Lbtn("soft","md",'data-act="imp"',"שחזר")}</div></div>`:""}`)}`;
+ const s=S.settings,fx=s.fixed||[],tot=fx.reduce((a,f)=>a+(f.amt||0),0),em=S.goals.find(g=>g.kind==="em"),th=s.theme||"system";
+ const cats=CATS.needs.concat(CATS.wants.filter(c=>!CATS.needs.includes(c)));
+ const sp=s.split;
+ return`<div class="stack">${Lshd("הגדרות")}
+ ${Lcard("חיסכון חודשי","",Lnf('data-sav="1"',s.savT!=null?s.savT:Math.round(targets().sav),"יעד חיסכון חודשי")+`<p class="note s">הסכום הזה מנוכה מ"אפשר להוציא היום" עד שמסמנים שהופקד. 0 מבטל את הניכוי.</p>`)}
+ ${Lcard("קרן חירום","",`<div class="g2"><div><label class="fl">יעד</label>${Lnf('data-em="target"',em?Math.round(goalTarget(em)):0,"יעד")}</div><div><label class="fl">יש כרגע</label>${Lnf('data-em="saved"',em?em.saved:0,"יש כרגע")}</div></div>`)}
+ ${Lcard("מראה","",Lseg("מראה",th,[{v:"system",l:"אוטומטי"},{v:"light",l:"בהיר"},{v:"dark",l:"כהה"}],"theme"))}
+ ${Lcard("גיבוי","",`<p class="note" style="margin:0 0 12px">הנתונים נשמרים בטלפון בלבד. גבה מדי פעם: נפתח תפריט השיתוף ואפשר לשמור את הקובץ בדרייב.</p><div class="g2">${Lbtn("soft","md",'data-act="drive"',LI(LP.dl,"s16")+" גיבוי לקובץ")}${Lbtn("muted","md",'data-act="toggleio"',LI(LP.ul,"s16")+" ייצוא / ייבוא")}</div><p class="note s" id="sync"></p>${backupMsg?`<p class="note s">${esc(backupMsg)}</p>`:""}${SAL.io?`<div class="mt3"><input type="file" accept=".json,application/json" data-file="1" class="inp" style="padding-top:12px"><textarea id="json" class="inp mt2" placeholder="או הדבק JSON לשחזור"></textarea><div class="g2 mt2">${Lbtn("muted","md",'data-act="exp"',"הצג נתונים")}${Lbtn("soft","md",'data-act="imp"',"שחזר")}</div></div>`:""}`)}</div>`;
 }
 
 /* ---------- shell ---------- */
-LP.sum='<path d="m3 17 2 2 4-4"/><path d="m3 7 2 2 4-4"/><path d="M13 6h8"/><path d="M13 12h8"/><path d="M13 18h8"/>';
 function Ltabbar(){
- const t=(k,l,p)=>`<button type="button" class="tab${tab===k?" on":""}" data-act="go" data-v="${k}" aria-label="${l}"${tab===k?' aria-current="page"':""}>${LI(p,"s22",2.1)}<span class="tl">${l}</span></button>`;
- return`<nav class="dock" aria-label="ניווט ראשי">${t("home","בית",LP.house)}${t("sum","סיכום",LP.sum)}${t("set","הגדרות",LP.set2)}</nav>`;
+ const t=(k,l,p)=>`<button type="button" class="tab${tab===k?" on":""}" data-act="go" data-v="${k}">${LI(p,"s22",2.1)}${l}</button>`;
+ return`<nav class="tbn" aria-label="ניווט ראשי"><div class="tbi"><div class="tbg">${t("home","בית",LP.house)}${t("set","הגדרות",LP.set2)}</div></div></nav>`;
 }
-const Lsheet=()=>"";
-let PLAY=true;
-const REDUCED=()=>window.matchMedia&&matchMedia("(prefers-reduced-motion: reduce)").matches;
-function countUp(el,play){
- const to=+el.dataset.count||0;
- if(!play||REDUCED()||to<=0){el.textContent=Lfmt(to);return}
- el.textContent="0";const t0=performance.now()+380,dur=1150;
- const step=n=>{const p=Math.min(1,Math.max(0,(n-t0)/dur)),e=1-Math.pow(2,-10*p);el.textContent=Lfmt(Math.round(to*(p>=1?1:e)));if(p<1&&el.isConnected)requestAnimationFrame(step)};
- requestAnimationFrame(step);
-}
+const Lsheet=()=>`<div class="ov" data-act="qa-close"></div><div class="sht" role="dialog" aria-label="הוצאה חדשה"><div class="grab"></div><div class="shb"><h2 class="stt">הוצאה חדשה</h2>${qaForm()}</div></div>`;
 function render(){
- const v=({home:vHome,sum:vSum,set:vSet}[tab]||vHome)();
+ const v=({home:vHome,set:vSet}[tab]||vHome)();
  const th=S.settings.theme||"system",dark=th==="dark"||(th==="system"&&window.matchMedia&&matchMedia("(prefers-color-scheme: dark)").matches);
  document.documentElement.classList.toggle("dark",dark);
- const live=SNAP.st==="ok"&&SNAP.d,play=PLAY&&(tab==="set"||live);
- $("#view").innerHTML=`<div class="wrap${play?" enter":""}">${v}</div>${Ltabbar()}`;
- document.querySelectorAll("[data-count]").forEach(el=>countUp(el,play));
- if(play)PLAY=false;
+ $("#view").innerHTML=`<div class="wrap">${v}</div>${Ltabbar()}`;
  setSync();
+ requestAnimationFrame(()=>requestAnimationFrame(()=>{document.querySelectorAll("[data-w]").forEach(e=>e.style.width=e.dataset.w);document.querySelectorAll("[data-off]").forEach(e=>e.style.strokeDashoffset=e.dataset.off)}));
+ if(QA.open&&QA.focus){QA.focus=false;const a=document.querySelector(".sht [data-qa=amount]");a&&a.focus()}
 }
-
 function toast(title,o){
  o=o||{};let h=document.getElementById("toasts");if(!h){h=document.createElement("div");h.id="toasts";document.body.appendChild(h)}
  const el=document.createElement("div");el.className="toast";
@@ -386,13 +405,7 @@ async function Lbackup(){
 }
 const Lold=act;
 act=async function(a,v,el){
- if(a==="go"){QA.open=false;PLAY=true;
-  const go=()=>Lold(a,v,el);
-  if(document.startViewTransition&&!REDUCED()&&el&&el.getBoundingClientRect){const r=el.getBoundingClientRect(),R=document.documentElement.style;R.setProperty("--vx",(r.left+r.width/2)+"px");R.setProperty("--vy",(r.top+r.height/2)+"px");document.startViewTransition(()=>{go()})}
-  else go();
-  return}
- if(a==="fresh"){const e=document.getElementById("fresh");if(e)e.scrollIntoView({behavior:"smooth",block:"start"});else if(tab!=="home"){tab="home";PLAY=false;render();setTimeout(()=>{const x=document.getElementById("fresh");x&&x.scrollIntoView({behavior:"smooth",block:"start"})},60)}return}
- if(a==="sumdone"){const k=mk(todayStr())+":"+v,m=S.settings.sumDone=S.settings.sumDone||{};if(m[k])delete m[k];else m[k]=1;mark("meta");const y=scrollY;render();scrollTo(0,y);return}
+ if(a==="go"){QA.open=false;return Lold(a,v,el)}
  if(a==="qa-open"){QA.open=true;QA.focus=true;render();return}
  if(a==="qa-close"){QA.open=false;render();return}
  if(a==="qa-pick"){QA.cat=v;document.querySelectorAll(".chip").forEach(b=>{const on=b.dataset.v===v;b.classList.toggle("on",on);b.setAttribute("aria-checked",on)});return}
@@ -435,8 +448,7 @@ document.addEventListener("input",e=>{
  else if(d.sp){SP.raw=el.value}
  else if(d.sd){const n=num(el.value.replace(/[^\d]/g,""));S.settings.sd={k:mk(todayStr()),amt:n};mark("meta")}
  else if(d.sav){const n=num(el.value.replace(/[^\d]/g,""));S.settings.savT=n;mark("meta")}
- else if(d.gem){const n=num(el.value.replace(/[^\d]/g,""));S.settings.gemel=n;S.settings.gemelAt=new Date().toISOString();mark("meta")}
- else if(d.savday!==undefined){const n=num(el.value.replace(/[^\d]/g,""));if(n>=1&&n<=28){S.settings.savDay=n;mark("meta")}}
+ else if(d.gem){const n=num(el.value.replace(/[^\d]/g,""));S.settings.gemel=n;mark("meta")}
  else if(d.bal){const v=el.value.replace(/[^\d.\-]/g,"");if(v!==el.value)el.value=v;BAL.raw=v}
  else if(d.base){const n=num(el.value.replace(/[^\d]/g,""));el.value=String(n||"");if(n>0){S.settings.base=n;mark("meta")}}
  else if(d.bi!==undefined&&d.bf==="amt"){const f=(S.settings.fixed||[])[+d.bi];if(f){const n=num(el.value.replace(/[^\d]/g,""));el.value=String(n||"");f.amt=n;mark("meta");const t=document.getElementById("bt");if(t)t.textContent=Lils((S.settings.fixed||[]).reduce((a,x)=>a+(x.amt||0),0))}}
@@ -449,11 +461,3 @@ document.addEventListener("change",e=>{const el=e.target,d=el.dataset||{};
 document.addEventListener("change",e=>{const d=e.target.dataset||{};if(d.sd!==undefined||d.sav!==undefined)render()});
 render();
 loadSnap();document.addEventListener("visibilitychange",()=>{if(!document.hidden)loadSnap()});
-
-/* ---------- touch feedback: ripple + tiny haptic ---------- */
-document.addEventListener("pointerdown",e=>{
- const t=e.target.closest&&e.target.closest(".rp,.btn,.tab,.sg,.chip");if(!t||t.disabled)return;
- if(!REDUCED()){const r=t.getBoundingClientRect(),z=Math.max(r.width,r.height)*2.2,i=document.createElement("i");i.className="rpl";
-  i.style.cssText=`width:${z}px;height:${z}px;left:${e.clientX-r.left-z/2}px;top:${e.clientY-r.top-z/2}px`;t.appendChild(i);i.addEventListener("animationend",()=>i.remove())}
- try{navigator.vibrate&&t.closest("[data-act]")&&navigator.vibrate(6)}catch(_){}
-},{passive:true});
