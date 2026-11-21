@@ -227,7 +227,7 @@ function snapCards(){
   const total=c.bal+c.sav+c.inv+(em?em.saved:0)+gem;
   const row=(l,v,n)=>`<li class="r"><div class="grow"><p class="t1">${l}</p>${n?`<p class="t2">${n}</p>`:""}</div><b class="tn">${Lsn(v)}</b></li>`;
   const main=Lcard("העו\"ש שלי",Lpill(tone,"עודכן "+LdateFmt(SNAP.d.generatedAt)),`<span class="bn${c.bal<0?" neg":""}">${c.bal<0?"−":""}${Lfmt(c.bal)}<span class="cur"> ₪</span></span>
-   <ul class="lst mt3">${row("חיובי אשראי וחיובים צפויים",-c.billed,"עד סוף החודש הבא · כרטיסים "+Lils(c.cards))}${row("הוצאות קבועות שעוד יירדו החודש",-c.fixed)}${row("פנוי אחרי חיובים וקבועות",c.free)}</ul>
+   <ul class="lst mt3">${row("חיובי אשראי וחיובים צפויים",-c.billed,"כרטיסי אשראי, עד סוף החודש הבא")}${row("הוצאות קבועות שעוד יירדו החודש",-c.fixed)}${row("פנוי אחרי חיובים וקבועות",c.free)}</ul>
    <p class="note s">בערך <b>${Lils(c.perDay)}</b> ליום עד סוף החודש (${c.dl} ימים). נתוני הבנק נכון ל-${LdateFmt(c.asOf)}.${c.partial?" חלק מהנתונים לא נקראו: "+esc(c.errs.join("; ")):""}</p>`);
   const up=c.up.length?Lcard("חיובים קרובים","",`<ul class="lst">${c.up.map(u=>`<li class="r"><div class="grow"><p class="t1">${u.d.slice(8)}/${u.d.slice(5,7)}</p></div><b class="tn">${Lils(u.a)}</b></li>`).join("")}</ul>`):"";
   const map=Lcard("איפה הכסף שלי",`<span class="tn">${Lils(total)}</span>`,`<ul class="lst">${row("עו\"ש",c.bal,"זמין")}${c.sav?row("פיקדונות וחיסכון",c.sav,"בבנק"):""}${c.inv?row("השקעות בבנק",c.inv):""}${em?row("קרן חירום",em.saved,"מהאפליקציה"):""}${row("גמל להשקעה",gem,"לא זמין להוצאה")}</ul><div class="mt3"><label class="fl">עדכון גמל (ידני)</label>${Lnf('data-gem="1"',gem,"גמל להשקעה")}</div>`);
@@ -258,10 +258,11 @@ function Lcalc(key){
 function Ltips(m){
  const t=[],unpaid=m.fi.rows.filter(f=>!f.paid);
  if(unpaid.length){const tot=unpaid.reduce((a,f)=>a+f.amt,0);t.push(unpaid.length===1?`נשאר חשבון אחד לשלם, ${Lils(tot)}. הסכום כבר שמור בצד.`:`נשארו ${unpaid.length} חשבונות לשלם, ${Lils(tot)}. הסכום כבר שמור בצד.`)}
- if(m.incomeRec===0)t.push(`עוד לא רשמת משכורת החודש. בינתיים החישוב לפי ${Lils(S.settings.base)}.`);
+ const live=SNAP.st==="ok"&&SNAP.d;
+ if(!live&&m.incomeRec===0)t.push(`עוד לא רשמת משכורת החודש. בינתיים החישוב לפי ${Lils(S.settings.base)}.`);
  const fixed=new Set((S.settings.fixed||[]).map(f=>f.cat)),flex=Object.entries(m.d.cats).filter(e=>!fixed.has(e[0])).sort((a,b)=>b[1]-a[1]),top=flex[0];
- if(m.paceDiff>0&&top){t.push(`הכי הרבה הלך על ${top[0]}: ${Lils(top[1])}. שם הכי קל לחסוך.`);t.push(`כדי לחזור לקצב, נסה להישאר מתחת ל-${Lils(m.allow)} ביום.`)}
- else if(m.day>=3&&m.paceDiff<=0)t.push(`אתה מתחת לקצב ב-${Lils(-m.paceDiff)}. מה שיישאר יכול לעבור לחיסכון.`);
+ if(!live&&m.paceDiff>0&&top){t.push(`הכי הרבה הלך על ${top[0]}: ${Lils(top[1])}. שם הכי קל לחסוך.`);t.push(`כדי לחזור לקצב, נסה להישאר מתחת ל-${Lils(m.allow)} ביום.`)}
+ else if(!live&&m.day>=3&&m.paceDiff<=0)t.push(`אתה מתחת לקצב ב-${Lils(-m.paceDiff)}. מה שיישאר יכול לעבור לחיסכון.`);
  const em=S.goals.find(g=>g.kind==="em");if(em){const target=Math.round(goalTarget(em));if(target>0&&em.saved<target)t.push(`קרן החירום ב-${Math.round(em.saved/target*100)}%. עוד ${Lils(target-em.saved)} ליעד.`)}
  return t.slice(0,4);
 }
@@ -301,6 +302,7 @@ const LrefreshQA=()=>document.querySelectorAll(".qaf").forEach(f=>{const a=f.que
 
 /* ---------- views ---------- */
 function vHome(){
+ const SC=(SNAP.st==="ok"&&SNAP.d)?snapCalc():null;
  mon=mk(todayStr());const m=Lcalc(mon),T=Ltips(m),over=m.paceDiff;
  const tone=m.left<=0?"danger":m.remToday<0&&over<=0?"warning":over<=0?"success":over>m.poolFull*.1?"danger":"warning";
  const rv=m.allow>0?Lc01(m.remToday/m.allow):0;
@@ -309,7 +311,7 @@ function vHome(){
  const recent=[...S.tx].reverse().sort((a,b)=>b.date.localeCompare(a.date)).slice(0,6);
  const bills=rows.length?`<ul class="lst">${rows.map(f=>`<li class="r">${Lbdg(f.cat)}<div class="grow"><p class="t1">${esc(f.cat)}</p><p class="t2 tn">${Lils(f.paid?f.act:f.amt)}</p></div>${f.paid?Lpill("success",LI(LP.check,"s16",3)+"שולם","h8"):Lbtn("soft","sm",`data-act="payfixed" data-v="${esc(f.cat)}"`,"שולם")}</li>`).join("")}</ul>`:`<p style="font-size:15px;color:var(--muted-foreground)">אין חשבונות קבועים. אפשר להוסיף בהגדרות.</p>`;
  return`<div class="stack"><header class="hh"><p>${dl}</p><h1>שלום נדב</h1></header>
- <section class="surface hero hbox">${Lring(rv,tone,216,15,`<div><p class="hl">אפשר להוציא היום</p>${Lbig(Math.max(0,m.remToday),"hn")}</div>`)}${Lpill(tone,m.left<=0?"חרגת מהתקציב החודשי":over>0?`מעל הקצב ב-${Lils(over)}`:m.remToday<0?"חרגת היום":"בקצב החודשי","mt5")}<p class="hs">${m.remToday<0&&m.left>0?`חרגת היום ב-<b>${Lils(-m.remToday)}</b>. מחר אפשר <b>${Lils(m.nextDaily)}</b>`:`תקציב יומי <b>${Lils(m.allow)}</b> · הוצאת היום <b>${Lils(m.spentToday)}</b>`}</p><p class="hs" style="margin-top:4px">נשארו <b>${Lils(Math.max(0,m.left))}</b> ל-${m.daysLeft} ימים</p></section>
+ ${SC?`<section class="surface hero hbox">${Lring(SC.bal>0?SC.free/SC.bal:0,SC.free<=0?"danger":SC.age<48?"success":"warning",216,15,`<div><p class="hl">אפשר להוציא היום</p>${Lbig(SC.perDay,"hn")}</div>`)}${Lpill(SC.free<=0?"danger":SC.age<26?"success":SC.age<48?"warning":"danger",SC.free<=0?"אין פנוי אחרי החיובים":"אחרי חיובי אשראי וקבועות","mt5")}<p class="hs">פנוי <b>${Lils(SC.free)}</b> ל-${SC.dl} ימים עד סוף החודש</p><p class="hs" style="margin-top:4px">עו\"ש ${Lils(SC.bal)} פחות חיובים ${Lils(SC.billed+SC.fixed)}</p></section>`:`<section class="surface hero hbox">${Lring(rv,tone,216,15,`<div><p class="hl">אפשר להוציא היום</p>${Lbig(Math.max(0,m.remToday),"hn")}</div>`)}${Lpill(tone,m.left<=0?"חרגת מהתקציב החודשי":over>0?`מעל הקצב ב-${Lils(over)}`:m.remToday<0?"חרגת היום":"בקצב החודשי","mt5")}<p class="hs">${m.remToday<0&&m.left>0?`חרגת היום ב-<b>${Lils(-m.remToday)}</b>. מחר אפשר <b>${Lils(m.nextDaily)}</b>`:`תקציב יומי <b>${Lils(m.allow)}</b> · הוצאת היום <b>${Lils(m.spentToday)}</b>`}</p><p class="hs" style="margin-top:4px">נשארו <b>${Lils(Math.max(0,m.left))}</b> ל-${m.daysLeft} ימים</p></section>`}
  ${snapCards()}
  ${Lcard("חשבונות קבועים החודש",`${paid}/${rows.length} שולמו`,bills)}
  ${T.length?Lcard("מה לעשות עכשיו","",`<ul class="tips">${T.map(x=>`<li><span class="d" aria-hidden="true"></span><span>${esc(x)}</span></li>`).join("")}</ul>`):""}
