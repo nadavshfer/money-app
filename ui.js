@@ -131,6 +131,7 @@ textarea.inp{height:auto;min-height:96px;padding:12px 16px;font-size:12px;direct
 #toasts{position:fixed;top:calc(12px + env(safe-area-inset-top));left:0;right:0;z-index:100;display:flex;flex-direction:column;align-items:center;gap:8px;pointer-events:none}
 .toast{pointer-events:auto;width:min(356px,calc(100vw - 24px));display:flex;align-items:center;gap:10px;padding:16px;border-radius:18px;background:var(--popover);color:var(--foreground);border:1px solid var(--border);box-shadow:0 4px 12px rgba(0,0,0,.1);font-size:13px;animation:tin .3s cubic-bezier(.22,1,.36,1)}
 .toast .tt{font-weight:500}.toast .td{margin-top:2px;color:var(--muted-foreground)}.toast .ti{color:var(--success)}
+.bn{display:block;margin-top:4px;font-size:40px;font-weight:800;line-height:1.1;letter-spacing:-.025em;font-variant-numeric:tabular-nums}.bn.neg{color:var(--danger)}.bn .cur{font-size:.5em;font-weight:600;color:var(--muted-foreground)}
 @keyframes tin{from{opacity:0;transform:translateY(-12px)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){*,::before,::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
 `;
@@ -186,6 +187,13 @@ const Lnf=(attrs,val,label)=>`<div class="nf"><input class="inp" inputmode="nume
 /* ---------- state for the new UI ---------- */
 let QA={raw:"",note:"",cat:"סופר ומכולת",check:null,open:false,focus:false};
 let SAL={raw:null,fund:true,io:false};
+let BAL={raw:""};
+function Lbal(){const b=S.settings.bal;if(!b)return null;let v=b.amt;const seen=b.seen||[];S.tx.forEach(t=>{if(t.date>b.date||(t.date===b.date&&!seen.includes(t.id)))v+=t.type==="inc"?t.amt:-t.amt});return v}
+function balCard(){
+ const b=S.settings.bal,v=Lbal(),d=b?b.date.slice(8)+"/"+b.date.slice(5,7):"";
+ const head=b?`<p class="hl">יתרה משוערת</p><span class="bn${v<0?" neg":""}">${v<0?"−":""}${Lfmt(v)}<span class="cur"> ₪</span></span><p class="note s">מחושב מהתנועות שנרשמו מאז העדכון מה-${d}. מדי פעם עדכן לפי הבנק.</p>`:`<p class="note" style="margin:0 0 4px">הכנס את היתרה כפי שהיא בבנק עכשיו, והיא תתעדכן לבד עם כל הוצאה והכנסה שתרשום.</p>`;
+ return Lcard("העו\"ש שלי",b?"עודכן "+d:"",head+`<div class="brow mt3"><div class="nf"><input class="inp" inputmode="text" data-bal="1" aria-label="יתרה לפי הבנק" placeholder="יתרה לפי הבנק" value="${esc(BAL.raw)}"><span class="nfc">₪</span></div>${Lbtn("soft","md",'data-act="bal-save"',b?"עדכן":"שמור")}</div>`);
+}
 
 /* ---------- calculations ---------- */
 function Lcalc(key){
@@ -255,6 +263,7 @@ function vHome(){
  const bills=rows.length?`<ul class="lst">${rows.map(f=>`<li class="r">${Lbdg(f.cat)}<div class="grow"><p class="t1">${esc(f.cat)}</p><p class="t2 tn">${Lils(f.paid?f.act:f.amt)}</p></div>${f.paid?Lpill("success",LI(LP.check,"s16",3)+"שולם","h8"):Lbtn("soft","sm",`data-act="payfixed" data-v="${esc(f.cat)}"`,"שולם")}</li>`).join("")}</ul>`:`<p style="font-size:15px;color:var(--muted-foreground)">אין חשבונות קבועים. אפשר להוסיף בהגדרות.</p>`;
  return`<div class="stack"><header class="hh"><p>${dl}</p><h1>שלום נדב</h1></header>
  <section class="surface hero hbox">${Lring(rv,tone,216,15,`<div><p class="hl">אפשר להוציא היום</p>${Lbig(Math.max(0,m.remToday),"hn")}</div>`)}${Lpill(tone,m.left<=0?"חרגת מהתקציב החודשי":over>0?`מעל הקצב ב-${Lils(over)}`:m.remToday<0?"חרגת היום":"בקצב החודשי","mt5")}<p class="hs">${m.remToday<0&&m.left>0?`חרגת היום ב-<b>${Lils(-m.remToday)}</b>. מחר אפשר <b>${Lils(m.nextDaily)}</b>`:`תקציב יומי <b>${Lils(m.allow)}</b> · הוצאת היום <b>${Lils(m.spentToday)}</b>`}</p><p class="hs" style="margin-top:4px">נשארו <b>${Lils(Math.max(0,m.left))}</b> ל-${m.daysLeft} ימים</p></section>
+ ${balCard()}
  ${Lcard("חשבונות קבועים החודש",`${paid}/${rows.length} שולמו`,bills)}
  ${T.length?Lcard("מה לעשות עכשיו","",`<ul class="tips">${T.map(x=>`<li><span class="d" aria-hidden="true"></span><span>${esc(x)}</span></li>`).join("")}</ul>`):""}
  ${Lcard("הוצאה מהירה","",qaForm())}
@@ -371,6 +380,7 @@ act=async function(a,v,el){
   const g=S.goals.find(x=>x.kind==="em"),sv=Math.round(c.sav);
   if(SAL.fund&&g&&sv>0){g.saved+=sv;S.tx.push({id:uid(),date,type:"sav",amt:sv,cat:g.name,gid:g.id,note:""});mark("meta")}
   mark("m-"+mk(date));toast("משכורת נרשמה: "+Lils(c.amt),{ok:true,desc:SAL.fund&&sv>0?Lils(sv)+" עברו לקרן החירום":undefined});SAL.raw=null;render();return}
+ if(a==="bal-save"){const n=parseFloat(BAL.raw);if(!isFinite(n)){const x=document.querySelector("[data-bal]");x&&x.focus();return}const td=todayStr();S.settings.bal={amt:n,date:td,seen:S.tx.filter(t=>t.date===td).map(t=>t.id)};mark("meta");BAL.raw="";toast("יתרת העו\"ש עודכנה",{ok:true,desc:(n<0?"−":"")+Lils(n)});render();return}
  if(a==="theme"){S.settings.theme=v;mark("meta");render();return}
  if(a==="addfixed2"){const used=new Set((S.settings.fixed||[]).map(f=>f.cat)),c=CATS.needs.find(x=>!used.has(x))||"אחר";S.settings.fixed=(S.settings.fixed||[]).concat([{cat:c,amt:0}]);mark("meta");render();return}
  if(a==="delfixed2"){S.settings.fixed=(S.settings.fixed||[]).filter((_,i)=>i!==+v);mark("meta");render();return}
@@ -390,6 +400,7 @@ document.addEventListener("input",e=>{
  else if(d.sal==="raw"){const v=el.value.replace(/[^\d]/g,"");if(v!==el.value)el.value=v;SAL.raw=v;const c=LsalCalc();el.style.width=(Math.max(1,Lfmt(c.amt).length)+.6)+"ch";
   document.querySelectorAll("[data-sv]").forEach(n=>{const k=n.dataset.sv;n.textContent=Lils(k==="fund"?c.sav:c[k])});
   document.querySelectorAll("[data-salbtn]").forEach(b=>b.disabled=c.amt<=0)}
+ else if(d.bal){const v=el.value.replace(/[^\d.\-]/g,"");if(v!==el.value)el.value=v;BAL.raw=v}
  else if(d.base){const n=num(el.value.replace(/[^\d]/g,""));el.value=String(n||"");if(n>0){S.settings.base=n;mark("meta")}}
  else if(d.bi!==undefined&&d.bf==="amt"){const f=(S.settings.fixed||[])[+d.bi];if(f){const n=num(el.value.replace(/[^\d]/g,""));el.value=String(n||"");f.amt=n;mark("meta");const t=document.getElementById("bt");if(t)t.textContent=Lils((S.settings.fixed||[]).reduce((a,x)=>a+(x.amt||0),0))}}
  else if(d.em){const em=S.goals.find(g=>g.kind==="em");if(em){const n=num(el.value.replace(/[^\d]/g,""));el.value=String(n||"");if(d.em==="target"){em.auto=false;em.target=n}else em.saved=n;mark("meta")}}
