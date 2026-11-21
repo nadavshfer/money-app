@@ -189,6 +189,53 @@ let QA={raw:"",note:"",cat:"סופר ומכולת",check:null,open:false,focus:f
 let SAL={raw:null,fund:true,io:false};
 let BAL={raw:""};
 function Lbal(){const b=S.settings.bal;if(!b)return null;let v=b.amt;const seen=b.seen||[];S.tx.forEach(t=>{if(t.date>b.date||(t.date===b.date&&!seen.includes(t.id)))v+=t.type==="inc"?t.amt:-t.amt});return v}
+/* ---------- Riseup snapshot (encrypted file synced daily) ---------- */
+let SNAP={d:null,st:"none",msg:""},SP={raw:""};
+const Lsn=n=>(n<0?"−":"")+Lils(n);
+const b64d=x=>Uint8Array.from(atob(x),c=>c.charCodeAt(0));
+async function snapDecrypt(f,pass){const km=await crypto.subtle.importKey("raw",new TextEncoder().encode(pass),"PBKDF2",false,["deriveKey"]);const k=await crypto.subtle.deriveKey({name:"PBKDF2",salt:b64d(f.salt),iterations:f.iter,hash:"SHA-256"},km,{name:"AES-GCM",length:256},false,["decrypt"]);return JSON.parse(new TextDecoder().decode(await crypto.subtle.decrypt({name:"AES-GCM",iv:b64d(f.iv)},k,b64d(f.ct))))}
+async function loadSnap(){
+ let pass="",cached=null;try{pass=localStorage.getItem("snapPass")||"";cached=JSON.parse(localStorage.getItem("snapData")||"null")}catch(e){}
+ if(cached){SNAP.d=cached;SNAP.st="ok"}
+ try{
+  const r=await fetch("data/snapshot.enc.json",{cache:"no-store"});
+  if(r.status===404){if(!cached)SNAP.st="none"}
+  else if(!r.ok)throw new Error("http")
+  else if(!pass){if(!cached)SNAP.st="locked"}
+  else{try{SNAP.d=await snapDecrypt(await r.json(),pass);SNAP.st="ok";SNAP.msg="";try{localStorage.setItem("snapData",JSON.stringify(SNAP.d))}catch(e){}}
+   catch(e){try{localStorage.removeItem("snapPass")}catch(_){}SNAP.msg="הסיסמה לא נכונה";if(!cached)SNAP.st="locked"}}
+ }catch(e){}
+ if(tab==="home"&&!QA.open&&document.activeElement.tagName!=="INPUT")render();
+}
+function snapCalc(){
+ const d=SNAP.d,sum=(a,f)=>(a||[]).reduce((x,y)=>x+(f(y)||0),0);
+ const bal=sum(d.accounts,a=>a.balance),fm=d.futureMonthEnd||[],fn=d.futureNextMonthEnd||d.futureMonthEnd||[];
+ const exp=a=>(a||[]).filter(t=>!t.inc);
+ const billed=sum(fn,x=>sum(exp(x.txs),t=>t.a)),fixed=sum(fm,x=>sum(exp(x.fixedTxs),t=>t.a)),cards=sum(fn,x=>sum(x.cards,c=>c));
+ const free=bal-billed-fixed,now=new Date(),dim=new Date(now.getFullYear(),now.getMonth()+1,0).getDate(),dl=dim-now.getDate()+1;
+ const by={};fn.forEach(x=>exp(x.txs).forEach(t=>{by[t.d]=(by[t.d]||0)+t.a}));
+ const up=Object.keys(by).sort().map(k=>({d:k,a:by[k]}));
+ const asOf=(d.accounts||[]).map(a=>a.lastUpdated).filter(Boolean).sort()[0]||d.generatedAt;
+ const age=(Date.now()-new Date(d.generatedAt))/36e5;
+ return{bal,billed,fixed,cards,free,perDay:Math.max(0,free)/dl,dl,up,asOf,age,
+  sav:sum(d.savings,x=>x.balance),inv:sum(d.investments,x=>x.value),partial:d.status!=="ok",errs:d.errors||[]};
+}
+const LdateFmt=iso=>{const x=new Date(iso);return isNaN(x)?"":x.toLocaleString("he-IL",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"})};
+function snapCards(){
+ if(SNAP.st==="ok"&&SNAP.d){
+  const c=snapCalc(),tone=c.age<26?"success":c.age<48?"warning":"danger",em=S.goals.find(g=>g.kind==="em"),gem=S.settings.gemel==null?175000:S.settings.gemel;
+  const total=c.bal+c.sav+c.inv+(em?em.saved:0)+gem;
+  const row=(l,v,n)=>`<li class="r"><div class="grow"><p class="t1">${l}</p>${n?`<p class="t2">${n}</p>`:""}</div><b class="tn">${Lsn(v)}</b></li>`;
+  const main=Lcard("העו\"ש שלי",Lpill(tone,"עודכן "+LdateFmt(SNAP.d.generatedAt)),`<span class="bn${c.bal<0?" neg":""}">${c.bal<0?"−":""}${Lfmt(c.bal)}<span class="cur"> ₪</span></span>
+   <ul class="lst mt3">${row("חיובי אשראי וחיובים צפויים",-c.billed,"עד סוף החודש הבא · כרטיסים "+Lils(c.cards))}${row("הוצאות קבועות שעוד יירדו החודש",-c.fixed)}${row("פנוי אחרי חיובים וקבועות",c.free)}</ul>
+   <p class="note s">בערך <b>${Lils(c.perDay)}</b> ליום עד סוף החודש (${c.dl} ימים). נתוני הבנק נכון ל-${LdateFmt(c.asOf)}.${c.partial?" חלק מהנתונים לא נקראו: "+esc(c.errs.join("; ")):""}</p>`);
+  const up=c.up.length?Lcard("חיובים קרובים","",`<ul class="lst">${c.up.map(u=>`<li class="r"><div class="grow"><p class="t1">${u.d.slice(8)}/${u.d.slice(5,7)}</p></div><b class="tn">${Lils(u.a)}</b></li>`).join("")}</ul>`):"";
+  const map=Lcard("איפה הכסף שלי",`<span class="tn">${Lils(total)}</span>`,`<ul class="lst">${row("עו\"ש",c.bal,"זמין")}${c.sav?row("פיקדונות וחיסכון",c.sav,"בבנק"):""}${c.inv?row("השקעות בבנק",c.inv):""}${em?row("קרן חירום",em.saved,"מהאפליקציה"):""}${row("גמל להשקעה",gem,"לא זמין להוצאה")}</ul><div class="mt3"><label class="fl">עדכון גמל (ידני)</label>${Lnf('data-gem="1"',gem,"גמל להשקעה")}</div>`);
+  return main+up+map;
+ }
+ if(SNAP.st==="locked")return Lcard("סנכרון רייזאפ","",`<p class="note" style="margin:0 0 4px">יש נתונים מוצפנים מרייזאפ. הכנס את סיסמת הסנכרון פעם אחת במכשיר הזה.</p>${SNAP.msg?`<p class="note s" style="color:var(--danger)">${esc(SNAP.msg)}</p>`:""}<div class="brow mt3"><input class="inp" type="password" data-sp="1" aria-label="סיסמת סנכרון" placeholder="סיסמת סנכרון" value="${esc(SP.raw)}">${Lbtn("soft","md",'data-act="snap-unlock"',"פתח")}</div>`)+balCard();
+ return balCard();
+}
 function balCard(){
  const b=S.settings.bal,v=Lbal(),d=b?b.date.slice(8)+"/"+b.date.slice(5,7):"";
  const head=b?`<p class="hl">יתרה משוערת</p><span class="bn${v<0?" neg":""}">${v<0?"−":""}${Lfmt(v)}<span class="cur"> ₪</span></span><p class="note s">מחושב מהתנועות שנרשמו מאז העדכון מה-${d}. מדי פעם עדכן לפי הבנק.</p>`:`<p class="note" style="margin:0 0 4px">הכנס את היתרה כפי שהיא בבנק עכשיו, והיא תתעדכן לבד עם כל הוצאה והכנסה שתרשום.</p>`;
@@ -263,7 +310,7 @@ function vHome(){
  const bills=rows.length?`<ul class="lst">${rows.map(f=>`<li class="r">${Lbdg(f.cat)}<div class="grow"><p class="t1">${esc(f.cat)}</p><p class="t2 tn">${Lils(f.paid?f.act:f.amt)}</p></div>${f.paid?Lpill("success",LI(LP.check,"s16",3)+"שולם","h8"):Lbtn("soft","sm",`data-act="payfixed" data-v="${esc(f.cat)}"`,"שולם")}</li>`).join("")}</ul>`:`<p style="font-size:15px;color:var(--muted-foreground)">אין חשבונות קבועים. אפשר להוסיף בהגדרות.</p>`;
  return`<div class="stack"><header class="hh"><p>${dl}</p><h1>שלום נדב</h1></header>
  <section class="surface hero hbox">${Lring(rv,tone,216,15,`<div><p class="hl">אפשר להוציא היום</p>${Lbig(Math.max(0,m.remToday),"hn")}</div>`)}${Lpill(tone,m.left<=0?"חרגת מהתקציב החודשי":over>0?`מעל הקצב ב-${Lils(over)}`:m.remToday<0?"חרגת היום":"בקצב החודשי","mt5")}<p class="hs">${m.remToday<0&&m.left>0?`חרגת היום ב-<b>${Lils(-m.remToday)}</b>. מחר אפשר <b>${Lils(m.nextDaily)}</b>`:`תקציב יומי <b>${Lils(m.allow)}</b> · הוצאת היום <b>${Lils(m.spentToday)}</b>`}</p><p class="hs" style="margin-top:4px">נשארו <b>${Lils(Math.max(0,m.left))}</b> ל-${m.daysLeft} ימים</p></section>
- ${balCard()}
+ ${snapCards()}
  ${Lcard("חשבונות קבועים החודש",`${paid}/${rows.length} שולמו`,bills)}
  ${T.length?Lcard("מה לעשות עכשיו","",`<ul class="tips">${T.map(x=>`<li><span class="d" aria-hidden="true"></span><span>${esc(x)}</span></li>`).join("")}</ul>`):""}
  ${Lcard("הוצאה מהירה","",qaForm())}
@@ -380,6 +427,7 @@ act=async function(a,v,el){
   const g=S.goals.find(x=>x.kind==="em"),sv=Math.round(c.sav);
   if(SAL.fund&&g&&sv>0){g.saved+=sv;S.tx.push({id:uid(),date,type:"sav",amt:sv,cat:g.name,gid:g.id,note:""});mark("meta")}
   mark("m-"+mk(date));toast("משכורת נרשמה: "+Lils(c.amt),{ok:true,desc:SAL.fund&&sv>0?Lils(sv)+" עברו לקרן החירום":undefined});SAL.raw=null;render();return}
+ if(a==="snap-unlock"){if(!SP.raw)return;try{localStorage.setItem("snapPass",SP.raw)}catch(e){}SP.raw="";SNAP.msg="";await loadSnap();render();return}
  if(a==="bal-save"){const n=parseFloat(BAL.raw);if(!isFinite(n)){const x=document.querySelector("[data-bal]");x&&x.focus();return}const td=todayStr();S.settings.bal={amt:n,date:td,seen:S.tx.filter(t=>t.date===td).map(t=>t.id)};mark("meta");BAL.raw="";toast("יתרת העו\"ש עודכנה",{ok:true,desc:(n<0?"−":"")+Lils(n)});render();return}
  if(a==="theme"){S.settings.theme=v;mark("meta");render();return}
  if(a==="addfixed2"){const used=new Set((S.settings.fixed||[]).map(f=>f.cat)),c=CATS.needs.find(x=>!used.has(x))||"אחר";S.settings.fixed=(S.settings.fixed||[]).concat([{cat:c,amt:0}]);mark("meta");render();return}
@@ -400,6 +448,8 @@ document.addEventListener("input",e=>{
  else if(d.sal==="raw"){const v=el.value.replace(/[^\d]/g,"");if(v!==el.value)el.value=v;SAL.raw=v;const c=LsalCalc();el.style.width=(Math.max(1,Lfmt(c.amt).length)+.6)+"ch";
   document.querySelectorAll("[data-sv]").forEach(n=>{const k=n.dataset.sv;n.textContent=Lils(k==="fund"?c.sav:c[k])});
   document.querySelectorAll("[data-salbtn]").forEach(b=>b.disabled=c.amt<=0)}
+ else if(d.sp){SP.raw=el.value}
+ else if(d.gem){const n=num(el.value.replace(/[^\d]/g,""));S.settings.gemel=n;mark("meta")}
  else if(d.bal){const v=el.value.replace(/[^\d.\-]/g,"");if(v!==el.value)el.value=v;BAL.raw=v}
  else if(d.base){const n=num(el.value.replace(/[^\d]/g,""));el.value=String(n||"");if(n>0){S.settings.base=n;mark("meta")}}
  else if(d.bi!==undefined&&d.bf==="amt"){const f=(S.settings.fixed||[])[+d.bi];if(f){const n=num(el.value.replace(/[^\d]/g,""));el.value=String(n||"");f.amt=n;mark("meta");const t=document.getElementById("bt");if(t)t.textContent=Lils((S.settings.fixed||[]).reduce((a,x)=>a+(x.amt||0),0))}}
@@ -410,3 +460,4 @@ document.addEventListener("change",e=>{const el=e.target,d=el.dataset||{};
  else if(d.file&&el.files&&el.files[0]){const r=new FileReader();r.onload=()=>{const j=document.getElementById("json");if(j)j.value=String(r.result||"")};r.readAsText(el.files[0])}
 });
 render();
+loadSnap();document.addEventListener("visibilitychange",()=>{if(!document.hidden)loadSnap()});
