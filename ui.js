@@ -211,13 +211,13 @@ function snapCalc(){
  const d=SNAP.d,sum=(a,f)=>(a||[]).reduce((x,y)=>x+(f(y)||0),0);
  const bal=sum(d.accounts,a=>a.balance),fm=d.futureMonthEnd||[],fn=d.futureNextMonthEnd||d.futureMonthEnd||[];
  const exp=a=>(a||[]).filter(t=>!t.inc);
- const billed=sum(fn,x=>sum(exp(x.txs),t=>t.a)),fixed=sum(fm,x=>sum(exp(x.fixedTxs),t=>t.a)),cards=sum(fn,x=>sum(x.cards,c=>c));
- const free=bal-billed-fixed,now=new Date(),dim=new Date(now.getFullYear(),now.getMonth()+1,0).getDate(),dl=dim-now.getDate()+1;
+ const itemized=sum(fn,x=>sum(exp(x.txs),t=>t.a)),fixed=sum(fm,x=>sum(exp(x.fixedTxs),t=>t.a)),cards=sum(fn,x=>sum(x.cards,c=>c));
+ const billed=Math.max(itemized,cards),extra=Math.max(0,cards-itemized),free=bal-billed-fixed,now=new Date(),dim=new Date(now.getFullYear(),now.getMonth()+1,0).getDate(),dl=dim-now.getDate()+1;
  const by={};fn.forEach(x=>exp(x.txs).forEach(t=>{by[t.d]=(by[t.d]||0)+t.a}));
  const up=Object.keys(by).sort().map(k=>({d:k,a:by[k]}));
  const asOf=(d.accounts||[]).map(a=>a.lastUpdated).filter(Boolean).sort()[0]||d.generatedAt;
  const age=(Date.now()-new Date(d.generatedAt))/36e5;
- return{bal,billed,fixed,cards,free,perDay:Math.max(0,free)/dl,dl,up,asOf,age,
+ return{bal,billed,extra,fixed,cards,free,perDay:Math.max(0,free)/dl,dl,up,asOf,age,
   sav:sum(d.savings,x=>x.balance),inv:sum(d.investments,x=>x.value),partial:d.status!=="ok",errs:d.errors||[]};
 }
 const LdateFmt=iso=>{const x=new Date(iso);return isNaN(x)?"":x.toLocaleString("he-IL",{day:"numeric",month:"numeric",hour:"2-digit",minute:"2-digit"})};
@@ -229,7 +229,7 @@ function snapCards(){
   const main=Lcard("העו\"ש שלי",Lpill(tone,"עודכן "+LdateFmt(SNAP.d.generatedAt)),`<span class="bn${c.bal<0?" neg":""}">${c.bal<0?"−":""}${Lfmt(c.bal)}<span class="cur"> ₪</span></span>
    <ul class="lst mt3">${row("חיובי אשראי וחיובים צפויים",-c.billed,"כרטיסי אשראי, עד סוף החודש הבא")}${row("הוצאות קבועות שעוד יירדו החודש",-c.fixed)}${row("פנוי אחרי חיובים וקבועות",c.free)}</ul>
    <p class="note s">בערך <b>${Lils(c.perDay)}</b> ליום עד סוף החודש (${c.dl} ימים). נתוני הבנק נכון ל-${LdateFmt(c.asOf)}.${c.partial?" חלק מהנתונים לא נקראו: "+esc(c.errs.join("; ")):""}</p>`);
-  const up=c.up.length?Lcard("חיובים קרובים","",`<ul class="lst">${c.up.map(u=>`<li class="r"><div class="grow"><p class="t1">${u.d.slice(8)}/${u.d.slice(5,7)}</p></div><b class="tn">${Lils(u.a)}</b></li>`).join("")}</ul>`):"";
+  const up=c.up.length?Lcard("חיובים קרובים","",`<ul class="lst">${c.up.map(u=>`<li class="r"><div class="grow"><p class="t1">${u.d.slice(8)}/${u.d.slice(5,7)}</p></div><b class="tn">${Lils(u.a)}</b></li>`).join("")}${c.extra>=1?`<li class="r"><div class="grow"><p class="t1">חיובי כרטיס שטרם פורטו</p></div><b class="tn">${Lils(c.extra)}</b></li>`:""}</ul>`):"";
   const map=Lcard("איפה הכסף שלי",`<span class="tn">${Lils(total)}</span>`,`<ul class="lst">${row("עו\"ש",c.bal,"זמין")}${c.sav?row("פיקדונות וחיסכון",c.sav,"בבנק"):""}${c.inv?row("השקעות בבנק",c.inv):""}${em?row("קרן חירום",em.saved,"מהאפליקציה"):""}${row("גמל להשקעה",gem,"לא זמין להוצאה")}</ul><div class="mt3"><label class="fl">עדכון גמל (ידני)</label>${Lnf('data-gem="1"',gem,"גמל להשקעה")}</div>`);
   return main+up+map;
  }
